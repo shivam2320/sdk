@@ -6,9 +6,18 @@ import {
   RequestValidator,
   type RequestValidatorParams,
 } from "../validator/request-validator.js";
-import { getChain } from "@alchemy/aa-core";
+import { getChain, type SendUserOperationResult } from "@alchemy/aa-core";
 import { getChainId } from "../api/index.js";
 import { polygonMumbai } from "viem/chains";
+import { REQUEST_VALIDATOR_ADDRESS } from "../constants.js";
+import {
+  encodeFunctionData,
+  type Address,
+  type Hex,
+  type Transaction,
+  type TransactionReceipt,
+} from "viem";
+import { RequestValidatorAbi } from "../abis/RequestValidatorAbi.js";
 
 export class RequestProvider extends ValidatorProvider<
   RequestValidator,
@@ -23,6 +32,7 @@ export class RequestProvider extends ValidatorProvider<
       projectId: params.projectId,
       owner: params.owner,
       chain,
+      validatorAddress: REQUEST_VALIDATOR_ADDRESS,
       ...params.opts?.validatorConfig,
     });
     super(
@@ -56,5 +66,38 @@ export class RequestProvider extends ValidatorProvider<
       },
     });
     return instance;
+  }
+
+  encodeSetRequestSessions(
+    validUntil: number,
+    validAfter: number,
+    amount: number,
+    receiver: Address,
+    token: Address
+  ) {
+    return encodeFunctionData({
+      abi: RequestValidatorAbi,
+      functionName: "setRequestSessions",
+      args: [true, validUntil, validAfter, amount, receiver, token],
+    });
+  }
+
+  async setRequestSession(
+    validUntil: number,
+    validAfter: number,
+    amount: number,
+    receiver: Address,
+    token: Address
+  ): Promise<SendUserOperationResult> {
+    return await this.defaultProvider.sendUserOperation({
+      target: this.getValidator().validatorAddress,
+      data: this.encodeSetRequestSessions(
+        validUntil,
+        validAfter,
+        amount,
+        receiver,
+        token
+      ),
+    });
   }
 }

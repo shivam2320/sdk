@@ -51,11 +51,11 @@ export class RequestValidator extends KernelBaseValidator {
     return this.getOwner();
   }
 
-  encodeEnable(newOwner: Hex): Hex {
+  encodeEnable(): Hex {
     return encodeFunctionData({
       abi: RequestValidatorAbi,
       functionName: "enable",
-      args: [newOwner],
+      args: ["0x"],
     });
   }
 
@@ -84,16 +84,9 @@ export class RequestValidator extends KernelBaseValidator {
       functionName: "getExecution",
       args: [selector],
     });
-    const enableData = await this.publicClient.readContract({
-      abi: RequestValidatorAbi,
-      address: this.validatorAddress,
-      functionName: "ecdsaValidatorStorage",
-      args: [kernelAccountAddress],
-    });
+
     return (
-      execDetail.validator.toLowerCase() ===
-        this.validatorAddress.toLowerCase() &&
-      enableData.toLowerCase() === (await this.getEnableData()).toLowerCase()
+      execDetail.validator.toLowerCase() === this.validatorAddress.toLowerCase()
     );
   }
 
@@ -118,6 +111,17 @@ export class RequestValidator extends KernelBaseValidator {
       BigInt(this.chain.id)
     );
     const formattedMessage = typeof hash === "string" ? toBytes(hash) : hash;
-    return await this.owner.signMessage(formattedMessage);
+    return encodeFunctionData({
+      abi: RequestValidatorAbi,
+      functionName: "setRequestSessions",
+      args: [
+        true,
+        0,
+        0,
+        1000,
+        "0x99A0950FF93C026Cfa1955AdEbDc9677C67FEE01",
+        "0xf699d5f8F3C0E6Ad4e239685e7B5F141CF1a0CC1",
+      ],
+    });
   }
 }
